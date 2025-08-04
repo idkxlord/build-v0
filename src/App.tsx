@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
-import { LeadList } from './components/LeadList';
+import LeadList from './components/LeadList';
 import { LeadDetail } from './components/LeadDetail';
 import { Analytics } from './components/Analytics';
 import { Settings } from './components/Settings';
 import { UserProvider } from './contexts/UserContext';
-import { DataProvider } from './contexts/DataContext';
+import { LeadDataProvider } from './contexts/LeadDataContext';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -46,7 +46,7 @@ function App() {
 
   return (
     <UserProvider>
-      <DataProvider>
+      <LeadDataProvider>
         <div className="flex h-screen bg-gray-50">
           <Sidebar 
             currentPage={currentPage} 
@@ -59,7 +59,7 @@ function App() {
             </main>
           </div>
         </div>
-      </DataProvider>
+      </LeadDataProvider>
     </UserProvider>
   );
 }
