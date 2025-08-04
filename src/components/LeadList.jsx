@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useLeadData } from '../contexts/LeadDataContext';
 import { useUser } from '../contexts/UserContext';
-import { LeadForm } from './LeadForm';
+import LeadForm from './LeadForm';
 
 /**
  * LeadList Component - Displays leads in responsive card/table layout
