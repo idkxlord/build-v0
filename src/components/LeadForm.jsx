@@ -687,3 +687,4 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
 };
 
 export default LeadForm;
+export { LeadForm };
