@@ -36,7 +36,8 @@ const LeadList = ({ onSelectLead }) => {
     fetchLeads, 
     deleteLead, 
     bulkUpdateLeads,
-    clearError 
+    clearError,
+    hasPermission
   } = useLeadData();
   const { currentUser } = useUser();
 
@@ -224,6 +225,11 @@ const LeadList = ({ onSelectLead }) => {
    */
   const handleEdit = (leadId, event) => {
     event.stopPropagation();
+    const lead = filteredAndSortedLeads.find(l => l.id === leadId);
+    if (!hasPermission('edit', lead)) {
+      alert('You do not have permission to edit this lead');
+      return;
+    }
     setEditingLeadId(leadId);
     setShowEditForm(true);
     setActiveDropdown(null);
@@ -231,6 +237,11 @@ const LeadList = ({ onSelectLead }) => {
 
   const handleDelete = (leadId, event) => {
     event.stopPropagation();
+    const lead = filteredAndSortedLeads.find(l => l.id === leadId);
+    if (!hasPermission('delete', lead)) {
+      alert('You do not have permission to delete this lead');
+      return;
+    }
     setDeletingLeadId(leadId);
     setShowDeleteConfirm(true);
     setActiveDropdown(null);
@@ -258,6 +269,17 @@ const LeadList = ({ onSelectLead }) => {
    */
   const handleBulkAction = async (action, value) => {
     const leadIds = Array.from(selectedLeads);
+    
+    // Check permissions for bulk actions
+    if (action !== 'delete') {
+      const leadsToUpdate = filteredAndSortedLeads.filter(lead => leadIds.includes(lead.id));
+      const unauthorizedLeads = leadsToUpdate.filter(lead => !hasPermission('edit', lead));
+      if (unauthorizedLeads.length > 0) {
+        alert(`You do not have permission to edit ${unauthorizedLeads.length} of the selected leads`);
+        return;
+      }
+    }
+    
     const updates = {};
     
     switch (action) {
@@ -439,13 +461,15 @@ const LeadList = ({ onSelectLead }) => {
                     {activeDropdown === lead.id && (
                       <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
                         <div className="py-2">
-                          <button
-                            onClick={(e) => handleEdit(lead.id, e)}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center transition-colors"
-                          >
-                            <Edit className="w-4 h-4 mr-3" />
-                            Edit Lead
-                          </button>
+                          {hasPermission('edit', lead) && (
+                            <button
+                              onClick={(e) => handleEdit(lead.id, e)}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center transition-colors"
+                            >
+                              <Edit className="w-4 h-4 mr-3" />
+                              Edit Lead
+                            </button>
+                          )}
                           <button
                             onClick={(e) => handleAddContact(lead.id, e)}
                             className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center transition-colors"
@@ -453,14 +477,18 @@ const LeadList = ({ onSelectLead }) => {
                             <UserPlus className="w-4 h-4 mr-3" />
                             Add Contact
                           </button>
-                          <hr className="my-2" />
-                          <button
-                            onClick={(e) => handleDelete(lead.id, e)}
-                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4 mr-3" />
-                            Delete Lead
-                          </button>
+                          {hasPermission('delete', lead) && (
+                            <>
+                              <hr className="my-2" />
+                              <button
+                                onClick={(e) => handleDelete(lead.id, e)}
+                                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4 mr-3" />
+                                Delete Lead
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     )}
@@ -515,13 +543,15 @@ const LeadList = ({ onSelectLead }) => {
               {activeDropdown === lead.id && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
                   <div className="py-2">
-                    <button
-                      onClick={(e) => handleEdit(lead.id, e)}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center transition-colors"
-                    >
-                      <Edit className="w-4 h-4 mr-3" />
-                      Edit Lead
-                    </button>
+                    {hasPermission('edit', lead) && (
+                      <button
+                        onClick={(e) => handleEdit(lead.id, e)}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center transition-colors"
+                      >
+                        <Edit className="w-4 h-4 mr-3" />
+                        Edit Lead
+                      </button>
+                    )}
                     <button
                       onClick={(e) => handleAddContact(lead.id, e)}
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center transition-colors"
@@ -529,14 +559,18 @@ const LeadList = ({ onSelectLead }) => {
                       <UserPlus className="w-4 h-4 mr-3" />
                       Add Contact
                     </button>
-                    <hr className="my-2" />
-                    <button
-                      onClick={(e) => handleDelete(lead.id, e)}
-                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4 mr-3" />
-                      Delete Lead
-                    </button>
+                    {hasPermission('delete', lead) && (
+                      <>
+                        <hr className="my-2" />
+                        <button
+                          onClick={(e) => handleDelete(lead.id, e)}
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 mr-3" />
+                          Delete Lead
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -814,14 +848,14 @@ const LeadList = ({ onSelectLead }) => {
       )}
 
       {/* Forms and Modals */}
-      {showCreateForm && (
+      {showCreateForm && hasPermission('create') && (
         <LeadForm
           onClose={() => setShowCreateForm(false)}
           onSave={() => setShowCreateForm(false)}
         />
       )}
 
-      {showEditForm && editingLeadId && (
+      {showEditForm && editingLeadId && hasPermission('edit', filteredAndSortedLeads.find(l => l.id === editingLeadId)) && (
         <LeadForm
           leadId={editingLeadId}
           onClose={() => {

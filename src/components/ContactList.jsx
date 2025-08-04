@@ -24,6 +24,7 @@ const ContactList = ({ leadId }) => {
   const { 
     fetchContactsByLeadId, 
     deleteContact, 
+    hasPermission,
     loading, 
     error, 
     clearError 
@@ -69,6 +70,12 @@ const ContactList = ({ leadId }) => {
    */
   const handleEdit = (contactId, event) => {
     event.stopPropagation();
+    // Note: Contact permissions are typically tied to lead permissions
+    // Check if user can edit the parent lead
+    if (!hasPermission('edit')) {
+      alert('You do not have permission to edit contacts for this lead');
+      return;
+    }
     setEditingContactId(contactId);
     setShowEditForm(true);
     setActiveDropdown(null);
@@ -76,6 +83,10 @@ const ContactList = ({ leadId }) => {
 
   const handleDelete = (contactId, event) => {
     event.stopPropagation();
+    if (!hasPermission('edit')) {
+      alert('You do not have permission to delete contacts for this lead');
+      return;
+    }
     setDeletingContactId(contactId);
     setShowDeleteConfirm(true);
     setActiveDropdown(null);
@@ -132,6 +143,7 @@ const ContactList = ({ leadId }) => {
         </div>
         <button
           onClick={() => setShowAddForm(true)}
+          disabled={!hasPermission('edit')}
           className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -173,12 +185,14 @@ const ContactList = ({ leadId }) => {
               <p className="text-gray-500 mb-4">
                 Start by adding the first contact for this lead
               </p>
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Add First Contact
-              </button>
+             {hasPermission('edit') && (
+               <button
+                 onClick={() => setShowAddForm(true)}
+                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+               >
+                 Add First Contact
+               </button>
+             )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -216,21 +230,25 @@ const ContactList = ({ leadId }) => {
                             {activeDropdown === contact.id && (
                               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
                                 <div className="py-2">
-                                  <button
-                                    onClick={(e) => handleEdit(contact.id, e)}
-                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center transition-colors"
-                                  >
-                                    <Edit className="w-4 h-4 mr-3" />
-                                    Edit Contact
-                                  </button>
-                                  <hr className="my-2" />
-                                  <button
-                                    onClick={(e) => handleDelete(contact.id, e)}
-                                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center transition-colors"
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-3" />
-                                    Delete Contact
-                                  </button>
+                                  {hasPermission('edit') && (
+                                    <>
+                                      <button
+                                        onClick={(e) => handleEdit(contact.id, e)}
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center transition-colors"
+                                      >
+                                        <Edit className="w-4 h-4 mr-3" />
+                                        Edit Contact
+                                      </button>
+                                      <hr className="my-2" />
+                                      <button
+                                        onClick={(e) => handleDelete(contact.id, e)}
+                                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center transition-colors"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-3" />
+                                        Delete Contact
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -298,7 +316,7 @@ const ContactList = ({ leadId }) => {
       )}
 
       {/* Add Contact Form */}
-      {showAddForm && (
+      {showAddForm && hasPermission('edit') && (
         <ContactForm
           leadId={leadId}
           onClose={() => setShowAddForm(false)}
@@ -307,7 +325,7 @@ const ContactList = ({ leadId }) => {
       )}
 
       {/* Edit Contact Form */}
-      {showEditForm && editingContactId && (
+      {showEditForm && editingContactId && hasPermission('edit') && (
         <ContactForm
           leadId={leadId}
           contactId={editingContactId}

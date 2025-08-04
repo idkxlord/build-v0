@@ -10,7 +10,7 @@ interface LeadDetailProps {
 }
 
 export const LeadDetail: React.FC<LeadDetailProps> = ({ leadId, onBack }) => {
-  const { getLeadById, getContactsByLeadId, users } = useData();
+  const { getLeadById, getContactsByLeadId, users, hasPermission } = useData();
   const [activeTab, setActiveTab] = useState('overview');
   const [showEditForm, setShowEditForm] = useState(false);
   const [showAddContact, setShowAddContact] = useState(false);
@@ -89,13 +89,15 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ leadId, onBack }) => {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Leads
         </button>
-        <button
-          onClick={() => setShowEditForm(true)}
-          className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Edit className="w-4 h-4 mr-2" />
-          Edit Lead
-        </button>
+        {hasPermission('edit', lead) && (
+          <button
+            onClick={() => setShowEditForm(true)}
+            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Edit Lead
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
