@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { useUser } from './UserContext';
 
 // Initialize Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -26,6 +27,9 @@ export const useLeadData = () => {
  * Provides CRUD operations and caching for leads and contacts
  */
 export const LeadDataProvider = ({ children }) => {
+  // Get current user for access control
+  const { currentUser } = useUser();
+  
   // State management for leads, contacts, and UI states
   const [leads, setLeads] = useState([]);
   const [contacts, setContacts] = useState([]);
@@ -39,6 +43,71 @@ export const LeadDataProvider = ({ children }) => {
   
   // Cache expiry time (5 minutes)
   const CACHE_EXPIRY = 5 * 60 * 1000;
+
+  /**
+   * Check if user has permission to perform action on lead
+   */
+  const hasPermission = useCallback((action, lead = null) => {
+    if (!currentUser) return false;
+    
+    const { role, id: userId } = currentUser;
+    
+    switch (role) {
+      case 'Admin':
+        return true; // Admins have full access
+        
+      case 'Manager':
+        if (action === 'view' || action === 'create') return true;
+        if (action === 'edit' || action === 'delete') {
+          // Managers can edit/delete leads assigned to their team members
+          // For now, allowing all edit/delete - in real app, check team membership
+          return true;
+        }
+        return true;
+        
+      case 'Sales Rep':
+        if (action === 'view') {
+          // Sales reps can only view their own leads
+          return !lead || lead.assigned_to === userId;
+        }
+        if (action === 'create') return true;
+        if (action === 'edit' || action === 'delete') {
+          // Sales reps can only edit/delete their own leads
+          return lead && lead.assigned_to === userId;
+        }
+        return false;
+        
+      default:
+        return false;
+    }
+  }, [currentUser]);
+
+  /**
+   * Apply role-based filters to query
+   */
+  const applyRoleFilters = useCallback((query, filters = {}) => {
+    if (!currentUser) return query;
+    
+    const { role, id: userId } = currentUser;
+    
+    switch (role) {
+      case 'Admin':
+        // Admins see all leads
+        break;
+        
+      case 'Manager':
+        // Managers see leads under their team
+        // For now, showing all leads - in real app, filter by team membership
+        break;
+        
+      case 'Sales Rep':
+        // Sales reps see only their own leads
+        query = query.eq('assigned_to', userId);
+        break;
+    }
+    
+    return query;
+  }, [currentUser]);
 
   /**
    * Check if cache is still valid based on timestamp
@@ -69,6 +138,13 @@ export const LeadDataProvider = ({ children }) => {
    */
   const fetchLeads = useCallback(async (filters = {}) => {
     try {
+      // Check view permission
+      if (!hasPermission('view')) {
+        setError('You do not have permission to view leads');
+        setLoading(false);
+        return [];
+      }
+      
       setLoading(true);
       setError(null);
 
@@ -93,6 +169,9 @@ export const LeadDataProvider = ({ children }) => {
           stage:stages!leads_stage_id_fkey(id, name, order)
         `)
         .order('created_at', { ascending: false });
+
+      // Apply role-based filters
+      query = applyRoleFilters(query, filters);
 
       // Apply filters if provided
       if (filters.status) {
@@ -136,7 +215,7 @@ export const LeadDataProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [leadsCache, isCacheValid, handleError]);
+  }, [leadsCache, isCacheValid, handleError, hasPermission, applyRoleFilters]);
 
   /**
    * Fetch a single lead by ID with related contacts
@@ -148,7 +227,7 @@ export const LeadDataProvider = ({ children }) => {
 
       // Check cache first
       const cachedLead = leadsCache.get(`lead_${leadId}`);
-      if (cachedLead && isCacheValid(cachedLead.timestamp)) {
+      if (cachedLead && isCacheValid(cachedLead.timestamp) && hasPermission('view', cachedLead.data)) {
         setLoading(false);
         return cachedLead.data;
       }
@@ -180,6 +259,13 @@ export const LeadDataProvider = ({ children }) => {
         })) || []
       };
 
+      // Check view permission for this specific lead
+      if (!hasPermission('view', transformedLead)) {
+        setError('You do not have permission to view this lead');
+        setLoading(false);
+        return null;
+      }
+
       // Update cache
       setLeadsCache(prev => new Map(prev.set(`lead_${leadId}`, {
         data: transformedLead,
@@ -194,13 +280,19 @@ export const LeadDataProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [leadsCache, isCacheValid, handleError]);
+  }, [leadsCache, isCacheValid, handleError, hasPermission]);
 
   /**
    * Create a new lead
    */
   const createLead = useCallback(async (leadData) => {
     try {
+      // Check create permission
+      if (!hasPermission('create')) {
+        setError('You do not have permission to create leads');
+        return null;
+      }
+      
       setLoading(true);
       setError(null);
 
@@ -251,13 +343,20 @@ export const LeadDataProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [handleError]);
+  }, [handleError, hasPermission]);
 
   /**
    * Update an existing lead
    */
   const updateLead = useCallback(async (leadId, updates) => {
     try {
+      // First fetch the lead to check permissions
+      const existingLead = leads.find(lead => lead.id === leadId);
+      if (!existingLead || !hasPermission('edit', existingLead)) {
+        setError('You do not have permission to edit this lead');
+        return null;
+      }
+      
       setLoading(true);
       setError(null);
 
@@ -316,13 +415,20 @@ export const LeadDataProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [handleError]);
+  }, [handleError, hasPermission, leads]);
 
   /**
    * Delete a lead and all associated contacts
    */
   const deleteLead = useCallback(async (leadId) => {
     try {
+      // First fetch the lead to check permissions
+      const existingLead = leads.find(lead => lead.id === leadId);
+      if (!existingLead || !hasPermission('delete', existingLead)) {
+        setError('You do not have permission to delete this lead');
+        return false;
+      }
+      
       setLoading(true);
       setError(null);
 
@@ -364,7 +470,7 @@ export const LeadDataProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [handleError]);
+  }, [handleError, hasPermission, leads]);
 
   /**
    * Fetch contacts for a specific lead
@@ -571,6 +677,15 @@ export const LeadDataProvider = ({ children }) => {
    */
   const bulkUpdateLeads = useCallback(async (leadIds, updates) => {
     try {
+      // Check permissions for all leads being updated
+      const leadsToUpdate = leads.filter(lead => leadIds.includes(lead.id));
+      const unauthorizedLeads = leadsToUpdate.filter(lead => !hasPermission('edit', lead));
+      
+      if (unauthorizedLeads.length > 0) {
+        setError(`You do not have permission to edit ${unauthorizedLeads.length} of the selected leads`);
+        return [];
+      }
+      
       setLoading(true);
       setError(null);
 
@@ -619,7 +734,7 @@ export const LeadDataProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [handleError]);
+  }, [handleError, hasPermission, leads]);
 
   /**
    * Get lead statistics for dashboard
@@ -676,6 +791,7 @@ export const LeadDataProvider = ({ children }) => {
     // Utility functions
     getLeadStats,
     clearError,
+    hasPermission,
 
     // Cache management
     clearCache: () => {
