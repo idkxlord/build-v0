@@ -402,3 +402,4 @@ const ContactForm = ({ leadId, contactId = null, onClose, onSave }) => {
 };
 
 export default ContactForm;
+export { ContactForm };
