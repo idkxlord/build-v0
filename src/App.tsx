@@ -3,7 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import LeadList from './components/LeadList';
-import { LeadDetail } from './components/LeadDetail';
+import LeadDetail from './components/LeadDetail';
 import { Analytics } from './components/Analytics';
 import { Settings } from './components/Settings';
 import { UserProvider } from './contexts/UserContext';
