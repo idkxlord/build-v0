@@ -26,8 +26,8 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
     phone: '',
     status: 'New',
     assigned_to: currentUser?.id || '',
-    pipeline_id: 'pipeline-1',
-    stage_id: 'stage-1',
+    pipeline_id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6',
+    stage_id: 'g9j1l3i2-2m6k-4j1j-j2g0-9hg43l65g7i8',
     custom_fields: {}
   });
 
@@ -41,15 +41,15 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
 
   // Mock data (in real app, these would come from context or API)
   const users = [
-    { id: 'user-1', name: 'John Smith', role: 'Manager' },
-    { id: 'user-2', name: 'Sarah Johnson', role: 'Sales Rep' },
-    { id: 'user-3', name: 'Mike Wilson', role: 'Sales Rep' },
-    { id: 'user-4', name: 'Emma Davis', role: 'Admin' }
+    { id: 'e8a1d4a6-6e0c-4b5b-b684-1ba87d09a1c2', name: 'John Smith', role: 'Manager' },
+    { id: 'f9b2e5c7-7f1d-4c6c-c795-2cb98e10b2d3', name: 'Sarah Johnson', role: 'Sales Rep' },
+    { id: 'a3c4f6d8-8g2e-4d7d-d8a6-3dc09f21c3e4', name: 'Mike Wilson', role: 'Sales Rep' },
+    { id: 'b4d5g7e9-9h3f-4e8e-e9b7-4ed10g32d4f5', name: 'Emma Davis', role: 'Admin' }
   ];
 
   const pipelines = [
-    { id: 'pipeline-1', name: 'Sales Pipeline' },
-    { id: 'pipeline-2', name: 'Marketing Pipeline' }
+    { id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6', name: 'Sales Pipeline' },
+    { id: 'd6f7i9g1-1j5h-4g0g-g1d9-6gf32i54f6h7', name: 'Marketing Pipeline' }
   ];
 
   const statusOptions = ['New', 'Contacted', 'Qualified', 'Lost', 'Won'];
@@ -125,8 +125,8 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
               custom_fields: lead.custom_fields || {}
             });
           }
-        } catch (error) {
-          console.error('Error loading lead data:', error);
+      pipeline_id: formData.pipeline_id || 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6',
+      stage_id: formData.stage_id || 'g9j1l3i2-2m6k-4j1j-j2g0-9hg43l65g7i8',
         }
       }
     };
