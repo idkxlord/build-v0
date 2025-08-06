@@ -764,6 +764,7 @@ export const LeadDataProvider = ({ children }) => {
   // Initialize data on mount
   useEffect(() => {
     fetchLeads();
+    fetchUsers();
   }, []);
 
   // Context value with all methods and state
@@ -825,7 +826,6 @@ export const LeadDataProvider = ({ children }) => {
     <LeadDataContext.Provider value={contextValue}>
       {children}
     </LeadDataContext.Provider>
-      fetchUsers();
   );
 };
 
