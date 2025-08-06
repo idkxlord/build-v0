@@ -35,6 +35,7 @@ export const LeadDataProvider = ({ children }) => {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [users, setUsers] = useState([]);
   
   // Cache management for optimized data fetching
   const [leadsCache, setLeadsCache] = useState(new Map());
@@ -770,6 +771,7 @@ export const LeadDataProvider = ({ children }) => {
     // State
     leads,
     contacts,
+    users,
     loading,
     error,
     lastFetchTime,
@@ -800,10 +802,30 @@ export const LeadDataProvider = ({ children }) => {
     }
   };
 
+  // Fetch users for analytics and assignments
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <LeadDataContext.Provider value={contextValue}>
       {children}
     </LeadDataContext.Provider>
+      fetchUsers();
   );
 };
 

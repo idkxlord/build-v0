@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { BarChart3, TrendingUp, Users, Target, Calendar, Filter, Download } from 'lucide-react';
-import { useData } from '../contexts/DataContext';
+import { useLeadData } from '../contexts/LeadDataContext';
 
 export const Analytics: React.FC = () => {
-  const { leads, users } = useData();
+  const { leads, users } = useLeadData();
   const [timeRange, setTimeRange] = useState('30d');
   const [selectedMetric, setSelectedMetric] = useState('leads');
 

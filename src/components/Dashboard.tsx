@@ -1,13 +1,13 @@
 import React from 'react';
 import { Users, TrendingUp, Clock, CheckCircle } from 'lucide-react';
-import { useData } from '../contexts/DataContext';
+import { useLeadData } from '../contexts/LeadDataContext';
 
 interface DashboardProps {
   onNavigateToLeads: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToLeads }) => {
-  const { leads } = useData();
+  const { leads } = useLeadData();
 
   const stats = [
     {
