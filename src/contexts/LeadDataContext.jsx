@@ -761,6 +761,25 @@ export const LeadDataProvider = ({ children }) => {
     };
   }, [leads]);
 
+  // Fetch users for analytics and assignments
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Initialize data on mount
   useEffect(() => {
     fetchLeads();
@@ -800,25 +819,6 @@ export const LeadDataProvider = ({ children }) => {
     clearCache: () => {
       setLeadsCache(new Map());
       setContactsCache(new Map());
-    }
-  };
-
-  // Fetch users for analytics and assignments
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      setUsers(data || []);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
     }
   };
 
