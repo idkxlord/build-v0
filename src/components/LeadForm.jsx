@@ -126,6 +126,9 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
             });
           }
         }
+        } catch (error) {
+          console.error('Error loading lead data:', error);
+        }
       }
     };
 
