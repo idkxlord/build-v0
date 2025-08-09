@@ -125,8 +125,6 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
               custom_fields: lead.custom_fields || {}
             });
           }
-      pipeline_id: formData.pipeline_id || 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6',
-      stage_id: formData.stage_id || 'g9j1l3i2-2m6k-4j1j-j2g0-9hg43l65g7i8',
         }
       }
     };
