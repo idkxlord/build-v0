@@ -125,7 +125,6 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
               custom_fields: lead.custom_fields || {}
             });
           }
-        }
         } catch (error) {
           console.error('Error loading lead data:', error);
         }
