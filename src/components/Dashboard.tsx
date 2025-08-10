@@ -7,12 +7,14 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToLeads }) => {
-  const { leads } = useLeadData();
+  const { leads, getLeadStats } = useLeadData();
+  
+  const stats = getLeadStats();
 
-  const stats = [
+  const dashboardStats = [
     {
       title: 'Total Leads',
-      value: leads.length,
+      value: stats.totalLeads,
       change: '+12%',
       changeType: 'positive' as const,
       icon: Users,
@@ -20,7 +22,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToLeads }) => {
     },
     {
       title: 'Qualified Leads',
-      value: leads.filter(l => l.status === 'Qualified').length,
+      value: stats.qualifiedLeads,
       change: '+8%',
       changeType: 'positive' as const,
       icon: CheckCircle,
@@ -28,7 +30,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToLeads }) => {
     },
     {
       title: 'Active Deals',
-      value: leads.filter(l => ['Contacted', 'Qualified'].includes(l.status)).length,
+      value: (stats.statusCounts.Contacted || 0) + (stats.statusCounts.Qualified || 0),
       change: '+15%',
       changeType: 'positive' as const,
       icon: TrendingUp,
@@ -70,7 +72,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToLeads }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => {
+        {dashboardStats.map((stat) => {
           const Icon = stat.icon;
           return (
             <div
