@@ -3,37 +3,29 @@ import { BarChart3, TrendingUp, Users, Target, Calendar, Filter, Download } from
 import { useLeadData } from '../contexts/LeadDataContext';
 
 export const Analytics: React.FC = () => {
-  const { leads, users } = useLeadData();
+  const { leads, users, getLeadStats } = useLeadData();
   const [timeRange, setTimeRange] = useState('30d');
   const [selectedMetric, setSelectedMetric] = useState('leads');
 
-  const totalLeads = leads.length;
-  const qualifiedLeads = leads.filter(l => l.status === 'Qualified').length;
-  const wonLeads = leads.filter(l => l.status === 'Won').length;
-  const conversionRate = totalLeads > 0 ? ((wonLeads / totalLeads) * 100).toFixed(1) : '0';
+  const stats = getLeadStats();
+  const { totalLeads, statusCounts, conversionRate, qualifiedLeads } = stats;
 
-  const leadsByStatus = {
-    'New': leads.filter(l => l.status === 'New').length,
-    'Contacted': leads.filter(l => l.status === 'Contacted').length,
-    'Qualified': leads.filter(l => l.status === 'Qualified').length,
-    'Won': leads.filter(l => l.status === 'Won').length,
-    'Lost': leads.filter(l => l.status === 'Lost').length,
-  };
+  const leadsByStatus = statusCounts;
 
   const leadsByUser = users.map(user => ({
     name: user.name,
-    leads: leads.filter(l => l.assignedTo === user.id).length,
-    qualified: leads.filter(l => l.assignedTo === user.id && l.status === 'Qualified').length,
+    leads: leads.filter(l => l.assigned_to === user.id).length,
+    qualified: leads.filter(l => l.assigned_to === user.id && l.status === 'Qualified').length,
   }));
 
   const industryData = leads.reduce((acc, lead) => {
-    const industry = lead.customFields.Industry || 'Unknown';
+    const industry = lead.customFields?.industry || lead.custom_fields?.industry || 'Unknown';
     acc[industry] = (acc[industry] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
   const sourceData = leads.reduce((acc, lead) => {
-    const source = lead.customFields.Source || 'Unknown';
+    const source = lead.customFields?.source || lead.custom_fields?.source || 'Unknown';
     acc[source] = (acc[source] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
