@@ -1089,23 +1089,21 @@ export const LeadDataProvider = ({ children }) => {
   // Fetch users for analytics and assignments
   const fetchUsers = useCallback(async () => {
     try {
-      // Always use mock data for now to avoid permission issues
-      setUsers(mockUsers);
-      
-      // Uncomment this when RLS policies are properly configured
-      /*
       if (supabase) {
         const { data, error } = await supabase
           .from('users')
           .select('id, name, email, role')
           .order('name');
         
-        if (error) throw error;
-        setUsers(data || []);
+        if (error) {
+          console.warn('Error fetching users from Supabase, using mock data:', error);
+          setUsers(mockUsers);
+        } else {
+          setUsers(data || []);
+        }
       } else {
         setUsers(mockUsers);
       }
-      */
     } catch (error) {
       console.error('Error fetching users:', error);
       setUsers(mockUsers);
