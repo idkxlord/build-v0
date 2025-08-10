@@ -11,9 +11,13 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
   // Context hooks for data and user management
   const { 
     leads, 
+    pipelines,
+    stages,
     createLead, 
     updateLead, 
     fetchLeadById, 
+    fetchPipelines,
+    fetchStagesByPipelineId,
     loading, 
     error 
   } = useLeadData();
@@ -26,8 +30,8 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
     phone: '',
     status: 'New',
     assigned_to: currentUser?.id || '',
-    pipeline_id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6',
-    stage_id: 'g9j1l3i2-2m6k-4j1j-j2g0-9hg43l65g7i8',
+    pipeline_id: '',
+    stage_id: '',
     custom_fields: {}
   });
 
@@ -45,11 +49,6 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
     { id: 'f9b2e5c7-7f1d-4c6c-c795-2cb98e10b2d3', name: 'Sarah Johnson', role: 'Sales Rep' },
     { id: 'a3c4f6d8-8g2e-4d7d-d8a6-3dc09f21c3e4', name: 'Mike Wilson', role: 'Sales Rep' },
     { id: 'b4d5g7e9-9h3f-4e8e-e9b7-4ed10g32d4f5', name: 'Emma Davis', role: 'Admin' }
-  ];
-
-  const pipelines = [
-    { id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6', name: 'Sales Pipeline' },
-    { id: 'd6f7i9g1-1j5h-4g0g-g1d9-6gf32i54f6h7', name: 'Marketing Pipeline' }
   ];
 
   const statusOptions = ['New', 'Contacted', 'Qualified', 'Lost', 'Won'];
@@ -133,6 +132,57 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
 
     loadLeadData();
   }, [leadId, fetchLeadById, currentUser]);
+
+  /**
+   * Load pipelines on component mount
+   */
+  useEffect(() => {
+    const loadPipelines = async () => {
+      const pipelineData = await fetchPipelines();
+      
+      // Set default pipeline if none selected and pipelines are available
+      if (!formData.pipeline_id && pipelineData.length > 0) {
+        const defaultPipeline = pipelineData[0];
+        setFormData(prev => ({
+          ...prev,
+          pipeline_id: defaultPipeline.id
+        }));
+        
+        // Load stages for the default pipeline
+        const stageData = await fetchStagesByPipelineId(defaultPipeline.id);
+        if (stageData.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            stage_id: stageData[0].id
+          }));
+        }
+      }
+    };
+
+    loadPipelines();
+  }, [fetchPipelines, fetchStagesByPipelineId, formData.pipeline_id]);
+
+  /**
+   * Load stages when pipeline changes
+   */
+  useEffect(() => {
+    const loadStages = async () => {
+      if (formData.pipeline_id) {
+        const stageData = await fetchStagesByPipelineId(formData.pipeline_id);
+        
+        // Reset stage selection if current stage is not in the new pipeline
+        const currentStageValid = stageData.some(stage => stage.id === formData.stage_id);
+        if (!currentStageValid && stageData.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            stage_id: stageData[0].id
+          }));
+        }
+      }
+    };
+
+    loadStages();
+  }, [formData.pipeline_id, fetchStagesByPipelineId]);
 
   /**
    * Validation rules for form fields
@@ -222,6 +272,37 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
    * Handle input changes with validation
    */
   const handleInputChange = (name, value) => {
+    // Handle pipeline change - reset stage when pipeline changes
+    if (name === 'pipeline_id') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        stage_id: '' // Reset stage when pipeline changes
+      }));
+      
+      // Load stages for the new pipeline
+      if (value) {
+        fetchStagesByPipelineId(value).then(stageData => {
+          if (stageData.length > 0) {
+            setFormData(prev => ({
+              ...prev,
+              stage_id: stageData[0].id
+            }));
+          }
+        });
+      }
+      
+      // Mark field as touched and validate
+      setTouched(prev => ({ ...prev, [name]: true }));
+      const fieldErrors = validateField(name, value);
+      setErrors(prev => ({
+        ...prev,
+        ...fieldErrors,
+        ...(Object.keys(fieldErrors).length === 0 && { [name]: undefined })
+      }));
+      return;
+    }
+
     // Update form data
     if (name.startsWith('custom_fields.')) {
       const fieldKey = name.replace('custom_fields.', '');
@@ -315,7 +396,7 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
         pipeline_id: formData.pipeline_id,
         stage_id: formData.stage_id,
         org_id: currentUser?.orgId || 'org-1',
-        custom_fields: formData.custom_fields
+        customFields: formData.custom_fields
       };
 
       let result;
@@ -583,11 +664,40 @@ const LeadForm = ({ leadId = null, onClose, onSave }) => {
                     value={formData.pipeline_id}
                     onChange={(e) => handleInputChange('pipeline_id', e.target.value)}
                     className={getInputStyling('pipeline_id')}
+                    disabled={pipelines.length === 0}
                   >
+                    <option value="">Select Pipeline</option>
                     {pipelines.map(pipeline => (
                       <option key={pipeline.id} value={pipeline.id}>{pipeline.name}</option>
                     ))}
                   </select>
+                  {pipelines.length === 0 && (
+                    <p className="mt-1 text-sm text-gray-500">Loading pipelines...</p>
+                  )}
+                </div>
+
+                {/* Stage */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Stage
+                  </label>
+                  <select
+                    value={formData.stage_id}
+                    onChange={(e) => handleInputChange('stage_id', e.target.value)}
+                    className={getInputStyling('stage_id')}
+                    disabled={!formData.pipeline_id || stages.length === 0}
+                  >
+                    <option value="">Select Stage</option>
+                    {stages.map(stage => (
+                      <option key={stage.id} value={stage.id}>{stage.name}</option>
+                    ))}
+                  </select>
+                  {!formData.pipeline_id && (
+                    <p className="mt-1 text-sm text-gray-500">Select a pipeline first</p>
+                  )}
+                  {formData.pipeline_id && stages.length === 0 && (
+                    <p className="mt-1 text-sm text-gray-500">Loading stages...</p>
+                  )}
                 </div>
               </div>
             </div>

@@ -66,14 +66,6 @@ const LeadList = ({ onSelectLead }) => {
     direction: 'desc'
   });
 
-  // Mock data for dropdowns (in real app, these would come from context)
-  const users = [
-    { id: 'e8a1d4a6-6e0c-4b5b-b684-1ba87d09a1c2', name: 'John Smith', role: 'Manager' },
-    { id: 'f9b2e5c7-7f1d-4c6c-c795-2cb98e10b2d3', name: 'Sarah Johnson', role: 'Sales Rep' },
-    { id: 'a3c4f6d8-8g2e-4d7d-d8a6-3dc09f21c3e4', name: 'Mike Wilson', role: 'Sales Rep' },
-    { id: 'b4d5g7e9-9h3f-4e8e-e9b7-4ed10g32d4f5', name: 'Emma Davis', role: 'Admin' }
-  ];
-
   const pipelines = [
     { id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6', name: 'Sales Pipeline' },
     { id: 'd6f7i9g1-1j5h-4g0g-g1d9-6gf32i54f6h7', name: 'Marketing Pipeline' }
