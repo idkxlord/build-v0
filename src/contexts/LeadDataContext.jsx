@@ -54,6 +54,10 @@ export const LeadDataProvider = ({ children }) => {
   const [contactsCache, setContactsCache] = useState(new Map());
   const [lastFetchTime, setLastFetchTime] = useState(null);
   
+  // Pipeline and stage data
+  const [pipelines, setPipelines] = useState([]);
+  const [stages, setStages] = useState([]);
+  
   // Cache expiry time (5 minutes)
   const CACHE_EXPIRY = 5 * 60 * 1000;
 
@@ -63,6 +67,20 @@ export const LeadDataProvider = ({ children }) => {
     { id: 'f9b2e5c7-7f1d-4c6c-c795-2cb98e10b2d3', name: 'Sarah Johnson', role: 'Sales Rep', email: 'sarah@company.com' },
     { id: 'a3c4f6d8-8g2e-4d7d-d8a6-3dc09f21c3e4', name: 'Mike Wilson', role: 'Sales Rep', email: 'mike@company.com' },
     { id: 'b4d5g7e9-9h3f-4e8e-e9b7-4ed10g32d4f5', name: 'Emma Davis', role: 'Admin', email: 'emma@company.com' }
+  ];
+
+  const mockPipelines = [
+    { id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6', name: 'Sales Pipeline', org_id: 'org-1' },
+    { id: 'd6f7i9g1-1j5h-4g0g-g1d9-6gf32i54f6h7', name: 'Marketing Pipeline', org_id: 'org-1' }
+  ];
+
+  const mockStages = [
+    { id: 'g9j1l3i2-2m6k-4j1j-j2g0-9hg43l65g7i8', name: 'New', pipeline_id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6', order_position: 1, org_id: 'org-1' },
+    { id: 'h0k2m4j3-3n7l-4k2k-k3h1-0ih54m76h8j9', name: 'Contacted', pipeline_id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6', order_position: 2, org_id: 'org-1' },
+    { id: 'i1l3n5k4-4o8m-4l3l-l4i2-1ji65n87i9k0', name: 'Qualified', pipeline_id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6', order_position: 3, org_id: 'org-1' },
+    { id: 'j2m4o6l5-5p9n-4m4m-m5j3-2kj76o98j0l1', name: 'Proposal', pipeline_id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6', order_position: 4, org_id: 'org-1' },
+    { id: 'k3n5p7m6-6q0o-4n5n-n6k4-3lk87p09k1m2', name: 'Closed Won', pipeline_id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6', order_position: 5, org_id: 'org-1' },
+    { id: 'l4o6q8n7-7r1p-4o6o-o7l5-4ml98q10l2n3', name: 'Closed Lost', pipeline_id: 'c5e6h8f0-0i4g-4f9f-f0c8-5fe21h43e5g6', order_position: 6, org_id: 'org-1' }
   ];
 
   const mockLeads = [
@@ -197,6 +215,82 @@ export const LeadDataProvider = ({ children }) => {
   const clearError = useCallback(() => {
     setError(null);
   }, []);
+
+  /**
+   * Fetch pipelines for the current organization
+   */
+  const fetchPipelines = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // If Supabase is not available, use mock data
+      if (!supabase || !currentUser) {
+        setPipelines(mockPipelines);
+        setLoading(false);
+        return mockPipelines;
+      }
+
+      const { data, error: fetchError } = await supabase
+        .from('pipelines')
+        .select('*')
+        .eq('org_id', currentUser.orgId)
+        .order('name');
+
+      if (fetchError) throw fetchError;
+
+      setPipelines(data || []);
+      return data || [];
+
+    } catch (error) {
+      handleError(error, 'fetch pipelines');
+      // Fallback to mock data on error
+      setPipelines(mockPipelines);
+      return mockPipelines;
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, handleError]);
+
+  /**
+   * Fetch stages for a specific pipeline
+   */
+  const fetchStagesByPipelineId = useCallback(async (pipelineId) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // If Supabase is not available, use mock data
+      if (!supabase || !currentUser) {
+        const filteredStages = mockStages.filter(stage => stage.pipeline_id === pipelineId);
+        setStages(filteredStages);
+        setLoading(false);
+        return filteredStages;
+      }
+
+      const { data, error: fetchError } = await supabase
+        .from('stages')
+        .select('*')
+        .eq('pipeline_id', pipelineId)
+        .eq('org_id', currentUser.orgId)
+        .order('order_position');
+
+      if (fetchError) throw fetchError;
+
+      const stageData = data || [];
+      setStages(stageData);
+      return stageData;
+
+    } catch (error) {
+      handleError(error, 'fetch stages');
+      // Fallback to mock data on error
+      const filteredStages = mockStages.filter(stage => stage.pipeline_id === pipelineId);
+      setStages(filteredStages);
+      return filteredStages;
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, handleError]);
 
   /**
    * Fetch leads with optional filters
@@ -433,10 +527,10 @@ export const LeadDataProvider = ({ children }) => {
         email: leadData.email,
         phone: leadData.phone || null,
         status: leadData.status || 'New',
-        stage_id: leadData.stageId,
-        pipeline_id: leadData.pipelineId,
-        assigned_to: leadData.assignedTo,
-        org_id: leadData.orgId,
+        stage_id: leadData.stage_id,
+        pipeline_id: leadData.pipeline_id,
+        assigned_to: leadData.assigned_to,
+        org_id: leadData.org_id,
         custom_fields: leadData.customFields || {}
       };
 
@@ -513,9 +607,9 @@ export const LeadDataProvider = ({ children }) => {
         ...(updates.email && { email: updates.email }),
         ...(updates.phone !== undefined && { phone: updates.phone }),
         ...(updates.status && { status: updates.status }),
-        ...(updates.stageId && { stage_id: updates.stageId }),
-        ...(updates.pipelineId && { pipeline_id: updates.pipelineId }),
-        ...(updates.assignedTo && { assigned_to: updates.assignedTo }),
+        ...(updates.stage_id && { stage_id: updates.stage_id }),
+        ...(updates.pipeline_id && { pipeline_id: updates.pipeline_id }),
+        ...(updates.assigned_to && { assigned_to: updates.assigned_to }),
         ...(updates.customFields && { custom_fields: updates.customFields }),
         updated_at: new Date().toISOString()
       };
@@ -923,8 +1017,8 @@ export const LeadDataProvider = ({ children }) => {
 
       const updateData = {
         ...(updates.status && { status: updates.status }),
-        ...(updates.assignedTo && { assigned_to: updates.assignedTo }),
-        ...(updates.stageId && { stage_id: updates.stageId }),
+        ...(updates.assigned_to && { assigned_to: updates.assigned_to }),
+        ...(updates.stage_id && { stage_id: updates.stage_id }),
         updated_at: new Date().toISOString()
       };
 
@@ -1030,6 +1124,8 @@ export const LeadDataProvider = ({ children }) => {
     leads,
     contacts,
     users,
+    pipelines,
+    stages,
     loading,
     error,
     lastFetchTime,
@@ -1041,6 +1137,10 @@ export const LeadDataProvider = ({ children }) => {
     updateLead,
     deleteLead,
     bulkUpdateLeads,
+
+    // Pipeline and stage operations
+    fetchPipelines,
+    fetchStagesByPipelineId,
 
     // Contact operations
     fetchContactsByLeadId,
