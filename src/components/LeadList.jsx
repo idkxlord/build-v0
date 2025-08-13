@@ -31,6 +31,7 @@ const LeadList = ({ onSelectLead }) => {
   // Context hooks for data and user management
   const { 
     leads, 
+    users,
     loading, 
     error, 
     fetchLeads, 
