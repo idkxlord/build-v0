@@ -317,8 +317,8 @@ export const LeadDataProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      // If Supabase is not available, use mock data
-      if (!supabase) {
+      // If Supabase is not available or tables don't exist, use mock data
+      if (!supabase || !currentUser) {
         console.warn('Using mock data - Supabase not available');
         const filteredMockLeads = mockLeads.filter(lead => {
           if (filters.status && lead.status !== filters.status) return false;
@@ -397,7 +397,7 @@ export const LeadDataProvider = ({ children }) => {
       return transformedLeads;
 
     } catch (error) {
-      handleError(error, 'fetch leads');
+      console.warn('Error fetching leads from Supabase, using mock data:', error);
       // Fallback to mock data on error
       const filteredMockLeads = mockLeads.filter(lead => {
         if (filters.status && lead.status !== filters.status) return false;
@@ -411,7 +411,7 @@ export const LeadDataProvider = ({ children }) => {
         return true;
       });
       setLeads(filteredMockLeads);
-      return [];
+      return filteredMockLeads;
     } finally {
       setLoading(false);
     }
@@ -1202,6 +1202,7 @@ export const LeadDataProvider = ({ children }) => {
           setUsers(data || []);
         }
       } else {
+        console.warn('Supabase not available, using mock users');
         setUsers(mockUsers);
       }
     } catch (error) {
