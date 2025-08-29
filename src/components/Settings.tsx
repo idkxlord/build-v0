@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { User, Bell, Shield, Database, Palette, Globe, Save, Eye, EyeOff } from 'lucide-react';
-import { useUser } from '../contexts/UserContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Settings: React.FC = () => {
-  const { currentUser, setCurrentUser } = useUser();
+  const { user: currentUser, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: currentUser.name,
-    email: currentUser.email,
-    role: currentUser.role,
+    name: currentUser?.name || '',
+    email: currentUser?.email || '',
+    role: currentUser?.role || '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
@@ -40,13 +40,19 @@ export const Settings: React.FC = () => {
     { id: 'integrations', label: 'Integrations', icon: Globe }
   ];
 
-  const handleSaveProfile = () => {
-    setCurrentUser({
-      ...currentUser,
+  const handleSaveProfile = async () => {
+    if (!currentUser) return;
+    
+    const result = await updateProfile({
       name: formData.name,
       email: formData.email
     });
-    alert('Profile updated successfully!');
+    
+    if (result.error) {
+      alert(`Error updating profile: ${result.error}`);
+    } else {
+      alert('Profile updated successfully!');
+    }
   };
 
   const handleSaveNotifications = () => {
@@ -116,7 +122,7 @@ export const Settings: React.FC = () => {
                   <div className="flex items-center space-x-6">
                     <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-2xl font-medium">
-                        {currentUser.name.split(' ').map(n => n[0]).join('')}
+                        {currentUser?.name.split(' ').map(n => n[0]).join('') || 'U'}
                       </span>
                     </div>
                     <div>
@@ -165,7 +171,7 @@ export const Settings: React.FC = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Organization ID</label>
                       <input
                         type="text"
-                        value={currentUser.orgId}
+                        value={currentUser?.orgId || ''}
                         disabled
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
                       />

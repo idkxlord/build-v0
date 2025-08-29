@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { useUser } from './UserContext';
+import { useAuth } from './AuthContext';
 
 // Initialize Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -40,7 +40,7 @@ export const useLeadData = () => {
  */
 export const LeadDataProvider = ({ children }) => {
   // Get current user for access control
-  const { currentUser } = useUser();
+  const { user: currentUser } = useAuth();
   
   // State management for leads, contacts, and UI states
   const [leads, setLeads] = useState([]);

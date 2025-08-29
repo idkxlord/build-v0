@@ -1,9 +1,9 @@
 import React from 'react';
 import { Search, Bell, ChevronDown, User, Settings, LogOut } from 'lucide-react';
-import { useUser } from '../contexts/UserContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Header: React.FC = () => {
-  const { currentUser } = useUser();
+  const { user: currentUser, signOut } = useAuth();
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
 
@@ -12,6 +12,18 @@ export const Header: React.FC = () => {
     { id: 2, message: 'Meeting scheduled with Aarav Sinha', time: '4 hours ago', unread: true },
     { id: 3, message: 'Lead status updated to Qualified', time: '1 day ago', unread: false },
   ];
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (!currentUser) {
+    return null;
+  }
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -88,7 +100,10 @@ export const Header: React.FC = () => {
                     Settings
                   </button>
                   <hr className="my-2" />
-                  <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center">
+                  <button 
+                    onClick={handleSignOut}
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center"
+                  >
                     <LogOut className="w-4 h-4 mr-3" />
                     Sign out
                   </button>
